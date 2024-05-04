@@ -10,6 +10,7 @@ import HomeScreen from '../screens/HomeScreen';
 import LoginScreen from '../screens/LoginScreen';
 import LocationScreen from '../screens/LocationScreen';
 import TimerScreen from '../screens/TimerScreen';
+import PhotoScreen from '../screens/PhotoScreen';
 
 const Drawer = createDrawerNavigator();
 
@@ -69,7 +70,7 @@ export default function DrawerNavigator() {
       <Drawer.Screen name="Biometrie" component={LoginScreen} />
       <Drawer.Screen name="Standortabfrage" component={LocationScreen} />
       <Drawer.Screen name="Benachrichtigungen" component={TimerScreen} />
-      <Drawer.Screen name="Fotos" component={TimerScreen} />
+      <Drawer.Screen name="Fotos" component={PhotoScreen} />
 
       {/* Weitere Screens hinzufügen */}
     </Drawer.Navigator>
