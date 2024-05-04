@@ -7,8 +7,9 @@ import {
 } from '@react-navigation/drawer';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import HomeScreen from '../screens/HomeScreen';
-import BiometrieScreen from '../screens/BiometrieScreen';
 import LoginScreen from '../screens/LoginScreen';
+import LocationScreen from '../screens/LocationScreen';
+import TimerScreen from '../screens/TimerScreen';
 
 const Drawer = createDrawerNavigator();
 
@@ -29,21 +30,21 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
       />
       <DrawerItem
         label="Standortabfrage"
-        onPress={() => props.navigation.navigate('Biometrie')}
+        onPress={() => props.navigation.navigate('Standortabfrage')}
         icon={({color, size}) => (
           <Icon name="location-on" color={color} size={size} />
         )}
       />
       <DrawerItem
         label="Benachrichtigungen"
-        onPress={() => props.navigation.navigate('Biometrie')}
+        onPress={() => props.navigation.navigate('Benachrichtigungen')}
         icon={({color, size}) => (
           <Icon name="notifications" color={color} size={size} />
         )}
       />
       <DrawerItem
         label="Fotos"
-        onPress={() => props.navigation.navigate('Biometrie')}
+        onPress={() => props.navigation.navigate('Fotos')}
         icon={({color, size}) => (
           <Icon name="camera" color={color} size={size} />
         )}
@@ -66,6 +67,10 @@ export default function DrawerNavigator() {
       drawerContent={props => <CustomDrawerContent {...props} />}>
       <Drawer.Screen name="Willkommen" component={HomeScreen} />
       <Drawer.Screen name="Biometrie" component={LoginScreen} />
+      <Drawer.Screen name="Standortabfrage" component={LocationScreen} />
+      <Drawer.Screen name="Benachrichtigungen" component={TimerScreen} />
+      <Drawer.Screen name="Fotos" component={TimerScreen} />
+
       {/* Weitere Screens hinzufügen */}
     </Drawer.Navigator>
   );

@@ -4,8 +4,19 @@ import {NavigationContainer} from '@react-navigation/native';
 import {createStackNavigator} from '@react-navigation/stack';
 import DrawerNavigator from './src/components/navigation/DrawerNavigator';
 import LoginScreen from './src/components/screens/LoginScreen';
+import notifee, {AndroidImportance} from '@notifee/react-native';
 
 const Stack = createStackNavigator();
+
+async function onAppBootstrap() {
+  await notifee.createChannel({
+    id: 'default',
+    name: 'Default Channel',
+    importance: AndroidImportance.HIGH,
+  });
+}
+
+onAppBootstrap();
 
 const AppNavigator = () => {
   return (
