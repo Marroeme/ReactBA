@@ -11,6 +11,7 @@ import {
 import {RNCamera} from 'react-native-camera';
 import RNFS from 'react-native-fs';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import PhotoEditor from 'react-native-photo-editor';
 
 class PhotoScreen extends Component {
   camera: RNCamera | null | undefined;
@@ -94,6 +95,24 @@ class PhotoScreen extends Component {
     this.setState({mode: 'full', selectedPhoto: photoPath});
   };
 
+  openPhotoEditor = () => {
+    const {selectedPhoto} = this.state;
+    if (!selectedPhoto) return;
+
+    PhotoEditor.Edit({
+      path: selectedPhoto,
+      stickers: [], // Add paths to sticker assets
+      hiddenControls: ['share', 'save'], // Adjust controls based on your requirements
+      onDone: () => {
+        // No need to replace the photo path as it's directly edited and overwritten
+        this.loadPhotos(); // Refresh the list
+      },
+      onCancel: () => {
+        console.log('Editing canceled');
+      },
+    });
+  };
+
   renderCamera = () => (
     <View style={{flex: 1}}>
       <RNCamera
@@ -104,7 +123,9 @@ class PhotoScreen extends Component {
       />
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() => this.setState({mode: 'list'})}>
+        onPress={() => {
+          this.setState({mode: 'list'}, this.loadPhotos);
+        }}>
         <Icon name="arrow-back" size={30} color="white" />
       </TouchableOpacity>
       <TouchableOpacity style={styles.captureButton} onPress={this.takePicture}>
@@ -116,13 +137,22 @@ class PhotoScreen extends Component {
   renderFullScreen = () => (
     <View style={{flex: 1}}>
       <Image
-        source={{uri: `file://${this.state.selectedPhoto}`}}
+        source={{
+          uri: `file://${this.state.selectedPhoto}?timestamp=${Date.now()}`,
+        }}
         style={{flex: 1, resizeMode: 'contain'}}
       />
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() => this.setState({mode: 'list', selectedPhoto: null})}>
+        onPress={() => {
+          this.setState({mode: 'list', selectedPhoto: null}, this.loadPhotos);
+        }}>
         <Icon name="arrow-back" size={30} color="white" />
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.editButton}
+        onPress={this.openPhotoEditor}>
+        <Icon name="edit" size={30} color="white" />
       </TouchableOpacity>
     </View>
   );
@@ -138,7 +168,7 @@ class PhotoScreen extends Component {
             onPress={() => this.openFullScreen(item)}>
             <View style={styles.photoItemContainer}>
               <Image
-                source={{uri: `file://${item}`}}
+                source={{uri: `file://${item}?timestamp=${Date.now()}`}}
                 style={styles.photoThumbnail}
               />
               <Text style={styles.photoLabel}>{`Foto ${index + 1}`}</Text>
@@ -235,9 +265,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  captureText: {
-    fontSize: 14,
-    color: 'black',
+  editButton: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
