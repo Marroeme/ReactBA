@@ -34,7 +34,7 @@ export default function FormScreen() {
 
   const unifiedInputStyle = {
     marginBottom: 16,
-    borderRadius: 5, // Einheitliche, abgerundete Ecken
+    borderRadius: 5, // Abgerundete Ecken
     borderColor: '#cccccc', // Gleicher Rahmen für alle Felder
     backgroundColor: 'white',
     paddingVertical: 8, // Einheitlicher Innenabstand
