@@ -102,6 +102,9 @@ android {
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
     }
+    defaultConfig {
+    missingDimensionStrategy 'react-native-camera', 'mlkit'
+  }
 }
 
 dependencies {
