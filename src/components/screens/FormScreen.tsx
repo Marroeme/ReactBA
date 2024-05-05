@@ -1,8 +1,15 @@
 // src/screens/FormScreen.tsx
 import React, {useState} from 'react';
-import {ScrollView, StyleSheet, Text} from 'react-native';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import {TextInput, Button, Menu, Provider} from 'react-native-paper';
 import DatePicker from 'react-native-date-picker';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 export default function FormScreen() {
   const [damageNumber, setDamageNumber] = useState<string>('');
@@ -47,6 +54,12 @@ export default function FormScreen() {
   return (
     <Provider>
       <ScrollView contentContainerStyle={styles.container}>
+        {/* PDF-Button oben rechts */}
+        <View style={styles.pdfButtonContainer}>
+          <TouchableOpacity>
+            <Icon name="picture-as-pdf" size={24} color="black" />
+          </TouchableOpacity>
+        </View>
         {/* Header */}
         <Text style={styles.header}>Blanko-Auftrag</Text>
 
@@ -210,5 +223,11 @@ const styles = StyleSheet.create({
     color: 'black',
     textAlign: 'left',
     fontSize: 16,
+  },
+  pdfButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingRight: 16,
+    paddingTop: 16,
   },
 });
