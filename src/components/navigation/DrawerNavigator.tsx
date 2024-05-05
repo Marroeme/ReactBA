@@ -11,6 +11,7 @@ import LoginScreen from '../screens/LoginScreen';
 import LocationScreen from '../screens/LocationScreen';
 import TimerScreen from '../screens/TimerScreen';
 import PhotoScreen from '../screens/PhotoScreen';
+import FormularScreen from '../screens/FormularScreen';
 
 const Drawer = createDrawerNavigator();
 
@@ -52,7 +53,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
       />
       <DrawerItem
         label="PDF Generator"
-        onPress={() => props.navigation.navigate('Biometrie')}
+        onPress={() => props.navigation.navigate('PDF')}
         icon={({color, size}) => (
           <Icon name="picture-as-pdf" color={color} size={size} />
         )}
@@ -71,6 +72,7 @@ export default function DrawerNavigator() {
       <Drawer.Screen name="Standortabfrage" component={LocationScreen} />
       <Drawer.Screen name="Benachrichtigungen" component={TimerScreen} />
       <Drawer.Screen name="Fotos" component={PhotoScreen} />
+      <Drawer.Screen name="PDF" component={FormularScreen} />
 
       {/* Weitere Screens hinzufügen */}
     </Drawer.Navigator>
