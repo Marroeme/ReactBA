@@ -15,52 +15,62 @@ import FormScreen from '../screens/FormScreen';
 
 const Drawer = createDrawerNavigator();
 
-function CustomDrawerContent(props: DrawerContentComponentProps) {
+const drawerItems = [
+  {
+    label: 'Willkommen',
+    screenName: 'Willkommen',
+    iconName: 'face',
+    accessibilityLabel: 'Navigiere zu Willkommen',
+  },
+  {
+    label: 'Biometrie',
+    screenName: 'Biometrie',
+    iconName: 'fingerprint',
+    accessibilityLabel: 'Navigiere zu Biometrie',
+  },
+  {
+    label: 'Standortabfrage',
+    screenName: 'Standortabfrage',
+    iconName: 'location-on',
+    accessibilityLabel: 'Navigiere zur Standortabfrage',
+  },
+  {
+    label: 'Benachrichtigungen',
+    screenName: 'Benachrichtigungen',
+    iconName: 'notifications',
+    accessibilityLabel: 'Navigiere zu Benachrichtigungen',
+  },
+  {
+    label: 'Fotos',
+    screenName: 'Fotos',
+    iconName: 'camera',
+    accessibilityLabel: 'Navigiere zu Fotos',
+  },
+  {
+    label: 'PDF Generator',
+    screenName: 'PDF',
+    iconName: 'picture-as-pdf',
+    accessibilityLabel: 'Navigiere zum PDF Generator',
+  },
+];
+
+const CustomDrawerContent = React.memo((props: DrawerContentComponentProps) => {
   return (
     <DrawerContentScrollView {...props}>
-      <DrawerItem
-        label="Willkommen"
-        onPress={() => props.navigation.navigate('Willkommen')}
-        icon={({color, size}) => <Icon name="face" color={color} size={size} />}
-      />
-      <DrawerItem
-        label="Biometrie"
-        onPress={() => props.navigation.navigate('Biometrie')}
-        icon={({color, size}) => (
-          <Icon name="fingerprint" color={color} size={size} />
-        )}
-      />
-      <DrawerItem
-        label="Standortabfrage"
-        onPress={() => props.navigation.navigate('Standortabfrage')}
-        icon={({color, size}) => (
-          <Icon name="location-on" color={color} size={size} />
-        )}
-      />
-      <DrawerItem
-        label="Benachrichtigungen"
-        onPress={() => props.navigation.navigate('Benachrichtigungen')}
-        icon={({color, size}) => (
-          <Icon name="notifications" color={color} size={size} />
-        )}
-      />
-      <DrawerItem
-        label="Fotos"
-        onPress={() => props.navigation.navigate('Fotos')}
-        icon={({color, size}) => (
-          <Icon name="camera" color={color} size={size} />
-        )}
-      />
-      <DrawerItem
-        label="PDF Generator"
-        onPress={() => props.navigation.navigate('PDF')}
-        icon={({color, size}) => (
-          <Icon name="picture-as-pdf" color={color} size={size} />
-        )}
-      />
+      {drawerItems.map(item => (
+        <DrawerItem
+          key={item.screenName}
+          label={item.label}
+          onPress={() => props.navigation.navigate(item.screenName)}
+          icon={({color, size}) => (
+            <Icon name={item.iconName} color={color} size={size} />
+          )}
+          accessibilityLabel={item.accessibilityLabel}
+        />
+      ))}
     </DrawerContentScrollView>
   );
-}
+});
 
 export default function DrawerNavigator() {
   return (
@@ -73,8 +83,6 @@ export default function DrawerNavigator() {
       <Drawer.Screen name="Benachrichtigungen" component={TimerScreen} />
       <Drawer.Screen name="Fotos" component={PhotoScreen} />
       <Drawer.Screen name="PDF" component={FormScreen} />
-
-      {/* Weitere Screens hinzufügen */}
     </Drawer.Navigator>
   );
 }

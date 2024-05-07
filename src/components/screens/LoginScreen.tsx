@@ -18,41 +18,33 @@ interface LoginScreenProps {
 }
 
 const biometrics = new ReactNativeBiometrics();
+const PROMPT_MESSAGE = 'Authentifizieren';
 
-interface BiometricPromptResult {
-  success: boolean;
-  error?: string;
-}
+const checkBiometrics = async (navigation: LoginScreenNavigationProp) => {
+  try {
+    const {available, biometryType} = await biometrics.isSensorAvailable();
 
-const checkBiometrics = (navigation: LoginScreenNavigationProp) => {
-  biometrics
-    .isSensorAvailable()
-    .then(result => {
-      const {available, biometryType} = result;
+    if (available && biometryType === BiometryTypes.Biometrics) {
+      try {
+        const {success} = await biometrics.simplePrompt({
+          promptMessage: PROMPT_MESSAGE,
+        });
 
-      if (available && biometryType === BiometryTypes.Biometrics) {
-        biometrics
-          .simplePrompt({promptMessage: 'Authentifizieren'})
-          .then((result: BiometricPromptResult) => {
-            const {success} = result;
-
-            if (success) {
-              console.log('Authentifizierung erfolgreich');
-              navigation.navigate('Home');
-            } else {
-              console.log('Authentifizierung abgebrochen');
-            }
-          })
-          .catch(() => {
-            console.log('Fehler bei biometrischer Authentifizierung');
-          });
-      } else {
-        console.log('Biometrie nicht verfügbar');
+        if (success) {
+          console.log('Authentifizierung erfolgreich');
+          navigation.navigate('Home');
+        } else {
+          console.log('Authentifizierung abgebrochen');
+        }
+      } catch {
+        console.log('Fehler bei biometrischer Authentifizierung');
       }
-    })
-    .catch(() => {
-      console.log('isSensorAvailable Fehler');
-    });
+    } else {
+      console.log('Biometrie nicht verfügbar');
+    }
+  } catch {
+    console.log('isSensorAvailable Fehler');
+  }
 };
 
 const LoginScreen: React.FC<LoginScreenProps> = ({navigation}) => {
@@ -61,7 +53,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({navigation}) => {
       <Text style={styles.title}>Login</Text>
       <TouchableOpacity
         style={styles.button}
-        onPress={() => checkBiometrics(navigation)}>
+        onPress={() => checkBiometrics(navigation)}
+        accessibilityLabel="Biometrische Authentifizierung starten">
         <Icon name="face" size={30} color="#000" />
         <Text style={styles.buttonText}>Biometrische Authentifizierung</Text>
       </TouchableOpacity>

@@ -1,5 +1,5 @@
 // src/screens/FormScreen.tsx
-import React, {useState} from 'react';
+import React, {useState, useMemo} from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -7,23 +7,89 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {TextInput, Button, Menu, Provider} from 'react-native-paper';
+import {TextInput, Button, Provider} from 'react-native-paper';
 import DatePicker from 'react-native-date-picker';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
 import RNPrint from 'react-native-print';
 
+// Custom Hook für Menü-Sichtbarkeit
+function useMenuVisibility(initialVisible = false) {
+  const [menuVisible, setMenuVisible] = useState<boolean>(initialVisible);
+  const toggleMenu = () => setMenuVisible(prev => !prev);
+  const closeMenu = () => setMenuVisible(false);
+  return [menuVisible, toggleMenu, closeMenu] as const;
+}
+
+// Menü-Komponente
+function SelectMenu({label, options, selected, onSelect}: any) {
+  const [menuVisible, toggleMenu, closeMenu] = useMenuVisibility();
+  return (
+    <View>
+      <Button mode="outlined" onPress={toggleMenu} style={styles.inputStyle}>
+        <Text style={styles.buttonText}>{selected || label}</Text>
+      </Button>
+      {menuVisible && (
+        <View style={{backgroundColor: 'white'}}>
+          {options.map((option: string) => (
+            <TouchableOpacity
+              key={option}
+              onPress={() => {
+                onSelect(option);
+                closeMenu();
+              }}
+              accessibilityLabel={`${label}-${option}`}>
+              <Text style={{padding: 10, color: 'black'}}>{option}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+// Datums-Komponente
+function DateSelector({label, date, onSelect}: any) {
+  const [open, setOpen] = useState<boolean>(false);
+  const formattedDate = useMemo(() => formatDate(date), [date]);
+  return (
+    <View>
+      <Button
+        mode="outlined"
+        onPress={() => setOpen(true)}
+        style={styles.inputStyle}>
+        <Text style={styles.buttonText}>{formattedDate || label}</Text>
+      </Button>
+      <DatePicker
+        modal
+        open={open}
+        date={date}
+        mode="date"
+        onConfirm={(newDate: Date) => {
+          onSelect(newDate);
+          setOpen(false);
+        }}
+        onCancel={() => setOpen(false)}
+      />
+    </View>
+  );
+}
+
+function formatDate(date: Date) {
+  return date.toLocaleDateString('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}
+
 export default function FormScreen() {
   const [damageNumber, setDamageNumber] = useState<string>('');
   const [selectedDamageType, setSelectedDamageType] =
     useState<string>('Schadenart');
-  const [menuVisibleDamageType, setMenuVisibleDamageType] =
-    useState<boolean>(false);
   const [insuranceType, setInsuranceType] = useState<string>('');
   const [date, setDate] = useState<Date>(new Date());
-  const [openDatePicker, setOpenDatePicker] = useState<boolean>(false);
   const [anrede, setAnrede] = useState<string>('Anrede');
-  const [menuVisibleAnrede, setMenuVisibleAnrede] = useState<boolean>(false);
   const [firstName, setFirstName] = useState<string>('');
   const [lastName, setLastName] = useState<string>('');
   const [address, setAddress] = useState<string>('');
@@ -34,27 +100,7 @@ export default function FormScreen() {
   const damageTypes: string[] = ['Unfall', 'Diebstahl', 'Schäden', 'Feuer'];
   const anreden: string[] = ['Herr', 'Frau'];
 
-  const unifiedInputStyle = {
-    marginBottom: 16,
-    borderRadius: 5, // Abgerundete Ecken
-    borderColor: '#cccccc', // Gleicher Rahmen für alle Felder
-    backgroundColor: 'white',
-    paddingVertical: 8, // Einheitlicher Innenabstand
-    paddingHorizontal: 12,
-    fontSize: 16, // Einheitliche Schriftgröße
-  };
-
-  const formatDate = (date: Date) => {
-    // DD.MM.YYYY Format
-    return date.toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-  };
-
   async function generatePDF() {
-    // HTML-Struktur für das PDF-Dokument
     const htmlContent = `
     <html>
       <head>
@@ -78,22 +124,14 @@ export default function FormScreen() {
       </body>
     </html>
     `;
-
-    // PDF-Optionen
     let options = {
       html: htmlContent,
       fileName: 'Blanko_Auftrag',
       directory: 'Documents',
     };
-
-    // PDF generieren
     try {
       let file = await RNHTMLtoPDF.convert(options);
-      console.log('PDF Path:', file.filePath);
-
-      // Überprüfen, ob filePath existiert
       if (file.filePath) {
-        // PDF-Druckvorschau anzeigen
         await RNPrint.print({filePath: file.filePath});
       } else {
         console.error('Fehler: Kein Dateipfad vorhanden');
@@ -106,10 +144,13 @@ export default function FormScreen() {
   return (
     <Provider>
       <ScrollView contentContainerStyle={styles.container}>
-        {/* Header-Container */}
+        {/* Header */}
         <View style={styles.headerContainer}>
           <Text style={styles.header}>Blanko-Auftrag</Text>
-          <TouchableOpacity onPress={generatePDF} style={styles.pdfButton}>
+          <TouchableOpacity
+            onPress={generatePDF}
+            style={styles.pdfButton}
+            accessibilityLabel="Generate PDF">
             <Icon name="picture-as-pdf" size={24} color="black" />
           </TouchableOpacity>
         </View>
@@ -119,135 +160,97 @@ export default function FormScreen() {
           label="Schadensnummer"
           value={damageNumber}
           onChangeText={(text: string) => setDamageNumber(text)}
-          style={unifiedInputStyle}
+          style={styles.inputStyle}
           mode="outlined"
+          accessibilityLabel="Damage Number"
         />
 
         {/* Schadenart */}
-        <Menu
-          visible={menuVisibleDamageType}
-          onDismiss={() => setMenuVisibleDamageType(false)}
-          anchor={
-            <Button
-              mode="outlined"
-              onPress={() => setMenuVisibleDamageType(true)}
-              style={unifiedInputStyle}>
-              <Text style={styles.buttonText}>{selectedDamageType}</Text>
-            </Button>
-          }>
-          {damageTypes.map(type => (
-            <Menu.Item
-              key={type}
-              onPress={() => {
-                setSelectedDamageType(type);
-                setMenuVisibleDamageType(false);
-              }}
-              title={type}
-            />
-          ))}
-        </Menu>
+        <SelectMenu
+          label="Schadenart"
+          options={damageTypes}
+          selected={selectedDamageType}
+          onSelect={(type: string) => setSelectedDamageType(type)}
+        />
 
         {/* Versicherungszweig */}
         <TextInput
           label="Versicherungszweig"
           value={insuranceType}
           onChangeText={(text: string) => setInsuranceType(text)}
-          style={unifiedInputStyle}
+          style={styles.inputStyle}
           mode="outlined"
+          accessibilityLabel="Insurance Type"
         />
 
-        {/* Datumsauswahl */}
-        <Button
-          mode="outlined"
-          onPress={() => setOpenDatePicker(true)}
-          style={unifiedInputStyle}>
-          <Text style={styles.buttonText}>{formatDate(date)}</Text>
-        </Button>
-        <DatePicker
-          modal
-          open={openDatePicker}
-          date={date}
-          mode="date"
-          onConfirm={(newDate: Date) => {
-            setDate(newDate);
-            setOpenDatePicker(false);
-          }}
-          onCancel={() => setOpenDatePicker(false)}
-        />
+        {/* Datum */}
+        <DateSelector label="Datum" date={date} onSelect={setDate} />
 
-        {/* Kontaktdaten Überschrift */}
+        {/* Kontaktdaten */}
         <Text style={styles.subHeader}>Kontaktdaten</Text>
 
         {/* Anrede */}
-        <Menu
-          visible={menuVisibleAnrede}
-          onDismiss={() => setMenuVisibleAnrede(false)}
-          anchor={
-            <Button
-              mode="outlined"
-              onPress={() => setMenuVisibleAnrede(true)}
-              style={unifiedInputStyle}>
-              <Text style={styles.buttonText}>{anrede}</Text>
-            </Button>
-          }>
-          {anreden.map(s => (
-            <Menu.Item
-              key={s}
-              onPress={() => {
-                setAnrede(s);
-                setMenuVisibleAnrede(false);
-              }}
-              title={s}
-            />
-          ))}
-        </Menu>
+        <SelectMenu
+          label="Anrede"
+          options={anreden}
+          selected={anrede}
+          onSelect={(selected: string) => setAnrede(selected)}
+        />
 
         {/* Titel */}
         <TextInput
           label="Titel"
           value={title}
           onChangeText={(text: string) => setTitle(text)}
-          style={unifiedInputStyle}
+          style={styles.inputStyle}
           mode="outlined"
         />
 
-        {/* Vorname und Nachname */}
+        {/* Vorname */}
         <TextInput
           label="Vorname"
           value={firstName}
           onChangeText={(text: string) => setFirstName(text)}
-          style={unifiedInputStyle}
+          style={styles.inputStyle}
           mode="outlined"
         />
+
+        {/* Nachname */}
         <TextInput
           label="Nachname"
           value={lastName}
           onChangeText={(text: string) => setLastName(text)}
-          style={unifiedInputStyle}
+          style={styles.inputStyle}
           mode="outlined"
         />
 
-        {/* Adresse, PLZ, Ort */}
+        {/* Adresse */}
         <TextInput
           label="Straße/Hausnummer"
           value={address}
           onChangeText={(text: string) => setAddress(text)}
-          style={unifiedInputStyle}
+          style={styles.inputStyle}
           mode="outlined"
         />
+
+        {/* PLZ */}
         <TextInput
           label="PLZ"
           value={zipCode}
           onChangeText={(text: string) => setZipCode(text)}
-          style={unifiedInputStyle}
+          style={styles.inputStyle}
           mode="outlined"
+          accessibilityLabel="ZIP Code"
         />
+
+        {/* Ort */}
         <TextInput
           label="Ort"
           value={city}
           onChangeText={(text: string) => setCity(text)}
-          style={unifiedInputStyle}
+          style={styles.inputStyle}
           mode="outlined"
+          accessibilityLabel="City"
         />
       </ScrollView>
     </Provider>
@@ -262,8 +265,8 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between', // Lässt Text und Button auf entgegengesetzten Seiten
-    alignItems: 'center', // Zentriert beides vertikal
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 16,
   },
   header: {
@@ -271,12 +274,21 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   pdfButton: {
-    paddingHorizontal: 8, // Optionaler Innenabstand
+    paddingHorizontal: 8,
   },
   subHeader: {
     fontSize: 18,
     fontWeight: 'bold',
     marginVertical: 16,
+  },
+  inputStyle: {
+    marginBottom: 16,
+    borderRadius: 5,
+    borderColor: '#cccccc',
+    backgroundColor: 'white',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    fontSize: 16,
   },
   buttonText: {
     color: 'black',

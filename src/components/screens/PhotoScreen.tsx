@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   StyleSheet,
   View,
@@ -13,21 +13,23 @@ import RNFS from 'react-native-fs';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import PhotoEditor from 'react-native-photo-editor';
 
-class PhotoScreen extends Component {
-  camera: RNCamera | null | undefined;
+const MODES = {
+  LIST: 'list',
+  CAMERA: 'camera',
+  FULL: 'full',
+};
 
-  state = {
-    photos: [], // List of photos with paths
-    mode: 'list', // 'list', 'camera', or 'full'
-    selectedPhoto: null, // Path of the photo currently displayed in full screen
-  };
+const PhotoScreen = () => {
+  const cameraRef = useRef<RNCamera | null>(null);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [mode, setMode] = useState<string>(MODES.LIST);
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
-  componentDidMount() {
-    this.loadPhotos();
-  }
+  useEffect(() => {
+    loadPhotos();
+  }, []);
 
-  // Load previously taken photos
-  loadPhotos = async () => {
+  const loadPhotos = async () => {
     try {
       const files = await RNFS.readDir(RNFS.ExternalDirectoryPath);
       const photoFiles = files
@@ -38,28 +40,27 @@ class PhotoScreen extends Component {
             file.name.endsWith('.jpg'),
         )
         .map(file => file.path);
-      this.setState({photos: photoFiles});
+      setPhotos(photoFiles);
     } catch (error) {
       console.error('Error loading photos:', error);
     }
   };
 
-  takePicture = async () => {
-    if (this.camera) {
+  const takePicture = async () => {
+    const camera = cameraRef.current;
+    if (camera) {
       const options = {quality: 0.5, base64: false};
-      const data = await this.camera.takePictureAsync(options);
+      const data = await camera.takePictureAsync(options);
       const newFilePath = `${
         RNFS.ExternalDirectoryPath
       }/photo_${Date.now()}.jpg`;
       await RNFS.moveFile(data.uri, newFilePath);
-      this.setState({
-        photos: [...this.state.photos, newFilePath],
-        mode: 'list',
-      });
+      setPhotos([...photos, newFilePath]);
+      setMode(MODES.LIST);
     }
   };
 
-  confirmDeletePhoto = (photoPath: string) => {
+  const confirmDeletePhoto = (photoPath: string) => {
     Alert.alert(
       'Foto löschen',
       'Möchten Sie dieses Foto wirklich löschen?',
@@ -67,7 +68,7 @@ class PhotoScreen extends Component {
         {text: 'Abbrechen', style: 'cancel'},
         {
           text: 'Löschen',
-          onPress: () => this.deletePhoto(photoPath),
+          onPress: () => deletePhoto(photoPath),
           style: 'destructive',
         },
       ],
@@ -75,97 +76,82 @@ class PhotoScreen extends Component {
     );
   };
 
-  deletePhoto = async (photoPath: string) => {
+  const deletePhoto = async (photoPath: string) => {
     try {
-      // Remove file from the filesystem
       await RNFS.unlink(photoPath);
-
-      // Update the photos state by filtering out the deleted photo
-      const updatedPhotos = this.state.photos.filter(
-        path => path !== photoPath,
-      );
-      this.setState({photos: updatedPhotos});
+      const updatedPhotos = photos.filter(path => path !== photoPath);
+      setPhotos(updatedPhotos);
     } catch (error) {
       console.error('Error deleting photo:', error);
       Alert.alert('Fehler', 'Foto konnte nicht gelöscht werden.');
     }
   };
 
-  openFullScreen = (photoPath: string) => {
-    this.setState({mode: 'full', selectedPhoto: photoPath});
+  const openFullScreen = (photoPath: string) => {
+    setMode(MODES.FULL);
+    setSelectedPhoto(photoPath);
   };
 
-  openPhotoEditor = () => {
-    const {selectedPhoto} = this.state;
+  const openPhotoEditor = () => {
     if (!selectedPhoto) return;
 
     PhotoEditor.Edit({
       path: selectedPhoto,
-      stickers: [], // Add paths to sticker assets
-      hiddenControls: ['share', 'save'], // Adjust controls based on your requirements
-      onDone: () => {
-        // No need to replace the photo path as it's directly edited and overwritten
-        this.loadPhotos(); // Refresh the list
-      },
+      stickers: [],
+      hiddenControls: ['share', 'save'],
+      onDone: loadPhotos,
       onCancel: () => {
         console.log('Editing canceled');
       },
     });
   };
 
-  renderCamera = () => (
+  const renderCamera = () => (
     <View style={{flex: 1}}>
-      <RNCamera
-        ref={ref => {
-          this.camera = ref;
-        }}
-        style={{flex: 1}}
-      />
+      <RNCamera ref={cameraRef} style={{flex: 1}} />
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() => {
-          this.setState({mode: 'list'}, this.loadPhotos);
-        }}>
+        onPress={() => setMode(MODES.LIST)}>
         <Icon name="arrow-back" size={30} color="white" />
       </TouchableOpacity>
-      <TouchableOpacity style={styles.captureButton} onPress={this.takePicture}>
+      <TouchableOpacity style={styles.captureButton} onPress={takePicture}>
         <Icon name="camera-alt" size={30} color="white" />
       </TouchableOpacity>
     </View>
   );
 
-  renderFullScreen = () => (
+  const renderFullScreen = () => (
     <View style={{flex: 1}}>
       <Image
         source={{
-          uri: `file://${this.state.selectedPhoto}?timestamp=${Date.now()}`,
+          uri: `file://${selectedPhoto}?timestamp=${Date.now()}`,
         }}
         style={{flex: 1, resizeMode: 'contain'}}
       />
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => {
-          this.setState({mode: 'list', selectedPhoto: null}, this.loadPhotos);
+          setMode(MODES.LIST);
+          setSelectedPhoto(null);
+          loadPhotos();
         }}>
         <Icon name="arrow-back" size={30} color="white" />
       </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.editButton}
-        onPress={this.openPhotoEditor}>
+      <TouchableOpacity style={styles.editButton} onPress={openPhotoEditor}>
         <Icon name="edit" size={30} color="white" />
       </TouchableOpacity>
     </View>
   );
 
-  renderPhotoList = () => (
+  const renderPhotoList = () => (
     <View style={styles.photoListContainer}>
       <FlatList
-        data={this.state.photos}
+        data={photos}
         keyExtractor={(item, index) => index.toString()}
         renderItem={({item, index}) => (
           <TouchableOpacity
-            onLongPress={() => this.confirmDeletePhoto(item)}
-            onPress={() => this.openFullScreen(item)}>
+            onLongPress={() => confirmDeletePhoto(item)}
+            onPress={() => openFullScreen(item)}>
             <View style={styles.photoItemContainer}>
               <Image
                 source={{uri: `file://${item}?timestamp=${Date.now()}`}}
@@ -178,24 +164,23 @@ class PhotoScreen extends Component {
       />
       <TouchableOpacity
         style={styles.cameraButton}
-        onPress={() => this.setState({mode: 'camera'})}>
+        onPress={() => setMode(MODES.CAMERA)}
+        accessibilityLabel="Kamera öffnen">
         <Icon name="photo-camera" size={30} color="white" />
       </TouchableOpacity>
     </View>
   );
 
-  render() {
-    return (
-      <View style={styles.container}>
-        {this.state.mode === 'camera'
-          ? this.renderCamera()
-          : this.state.mode === 'full'
-          ? this.renderFullScreen()
-          : this.renderPhotoList()}
-      </View>
-    );
-  }
-}
+  return (
+    <View style={styles.container}>
+      {mode === MODES.CAMERA
+        ? renderCamera()
+        : mode === MODES.FULL
+        ? renderFullScreen()
+        : renderPhotoList()}
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {

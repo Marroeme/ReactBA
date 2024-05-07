@@ -1,38 +1,49 @@
-import React, {useState, useEffect} from 'react';
-import {View, Text, Button, StyleSheet} from 'react-native';
+import React, {useState, useEffect, useRef} from 'react';
+import {View, Text, Button, StyleSheet, Alert} from 'react-native';
 import notifee from '@notifee/react-native';
 
+const INITIAL_TIME = 5; // Konstante für die initiale Zeit
+
 const TimerScreen = () => {
-  const [secondsRemaining, setSecondsRemaining] = useState(5);
+  const [secondsRemaining, setSecondsRemaining] = useState(INITIAL_TIME);
   const [timerActive, setTimerActive] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
     if (timerActive && secondsRemaining > 0) {
-      interval = setInterval(() => {
-        setSecondsRemaining(secondsRemaining - 1);
+      intervalRef.current = setInterval(() => {
+        setSecondsRemaining(prev => prev - 1);
       }, 1000);
     } else if (secondsRemaining === 0 && timerActive) {
       onDisplayNotification();
       setTimerActive(false);
     }
-    return () => clearInterval(interval);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   }, [secondsRemaining, timerActive]);
 
   const onDisplayNotification = async () => {
-    await notifee.requestPermission();
+    try {
+      await notifee.requestPermission();
 
-    notifee.displayNotification({
-      title: 'Timer',
-      body: 'Timer abgelaufen',
-      android: {
-        channelId: 'default',
-      },
-    });
+      await notifee.displayNotification({
+        title: 'Timer',
+        body: 'Timer abgelaufen',
+        android: {
+          channelId: 'default',
+        },
+      });
+    } catch (error) {
+      Alert.alert(
+        'Benachrichtigungsfehler',
+        'Benachrichtigung konnte nicht angezeigt werden.',
+      );
+    }
   };
 
   const startTimer = () => {
-    setSecondsRemaining(5);
+    setSecondsRemaining(INITIAL_TIME);
     setTimerActive(true);
   };
 
@@ -41,7 +52,11 @@ const TimerScreen = () => {
       <Text style={styles.timerText}>
         {secondsRemaining} Sekunden verbleibend
       </Text>
-      <Button title="Starte Timer" onPress={startTimer} />
+      <Button
+        title="Starte Timer"
+        onPress={startTimer}
+        accessibilityLabel="Starte Timer Button"
+      />
     </View>
   );
 };

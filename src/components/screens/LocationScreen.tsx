@@ -1,15 +1,9 @@
-import React, {useEffect, useState} from 'react';
-import {
-  View,
-  StyleSheet,
-  Button,
-  PermissionsAndroid,
-  Platform,
-} from 'react-native';
+import React, {useEffect, useState, useCallback} from 'react';
+import {View, StyleSheet, PermissionsAndroid, Platform} from 'react-native';
 import MapView, {Marker} from 'react-native-maps';
 import Geolocation from '@react-native-community/geolocation';
 
-const LocationScreen = () => {
+const useLocation = () => {
   const [region, setRegion] = useState({
     latitude: 51.9606649,
     longitude: 7.6261347,
@@ -21,7 +15,7 @@ const LocationScreen = () => {
     requestLocationPermission();
   }, []);
 
-  const requestLocationPermission = async () => {
+  const requestLocationPermission = useCallback(async () => {
     if (Platform.OS === 'android') {
       try {
         const granted = await PermissionsAndroid.request(
@@ -46,12 +40,11 @@ const LocationScreen = () => {
     } else {
       locateCurrentPosition(); // Direkter Zugriff für iOS
     }
-  };
+  }, []);
 
   const locateCurrentPosition = () => {
     Geolocation.getCurrentPosition(
       position => {
-        console.log(position);
         const {latitude, longitude} = position.coords;
         setRegion({
           latitude,
@@ -61,22 +54,35 @@ const LocationScreen = () => {
         });
       },
       error => {
-        console.log(error);
+        console.error('Fehler beim Ermitteln der Position:', error.message);
       },
       {enableHighAccuracy: true, timeout: 15000, maximumAge: 10000},
     );
   };
 
+  return region;
+};
+
+const LocationScreen = () => {
+  const region = useLocation();
+
   return (
-    <View style={{flex: 1}}>
-      <MapView style={{flex: 1}} region={region} showsUserLocation={true}>
-        <Marker coordinate={region} />
+    <View style={styles.container}>
+      <MapView
+        style={styles.map}
+        region={region}
+        showsUserLocation={true}
+        accessibilityLabel="Karte mit aktuellem Standort">
+        <Marker coordinate={region} accessibilityLabel="Aktueller Standort" />
       </MapView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   map: {
     ...StyleSheet.absoluteFillObject,
   },
