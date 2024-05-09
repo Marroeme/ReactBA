@@ -11,7 +11,7 @@ import {
 import {RNCamera} from 'react-native-camera';
 import RNFS from 'react-native-fs';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import PhotoEditor from 'react-native-photo-editor';
+import FullScreenImage from './FullScreenImage';
 
 const MODES = {
   LIST: 'list',
@@ -92,20 +92,6 @@ const PhotoScreen = () => {
     setSelectedPhoto(photoPath);
   };
 
-  const openPhotoEditor = () => {
-    if (!selectedPhoto) return;
-
-    PhotoEditor.Edit({
-      path: selectedPhoto,
-      stickers: [],
-      hiddenControls: ['share', 'save'],
-      onDone: loadPhotos,
-      onCancel: () => {
-        console.log('Editing canceled');
-      },
-    });
-  };
-
   const renderCamera = () => (
     <View style={{flex: 1}}>
       <RNCamera ref={cameraRef} style={{flex: 1}} />
@@ -120,28 +106,25 @@ const PhotoScreen = () => {
     </View>
   );
 
-  const renderFullScreen = () => (
-    <View style={{flex: 1}}>
-      <Image
-        source={{
-          uri: `file://${selectedPhoto}?timestamp=${Date.now()}`,
-        }}
-        style={{flex: 1, resizeMode: 'contain'}}
-      />
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => {
+  const renderFullScreen = () => {
+    if (selectedPhoto === null) {
+      return null;
+    }
+
+    return (
+      <FullScreenImage
+        photoPath={selectedPhoto}
+        onBack={() => {
           setMode(MODES.LIST);
           setSelectedPhoto(null);
           loadPhotos();
-        }}>
-        <Icon name="arrow-back" size={30} color="white" />
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.editButton} onPress={openPhotoEditor}>
-        <Icon name="edit" size={30} color="white" />
-      </TouchableOpacity>
-    </View>
-  );
+        }}
+        onEditDone={() => {
+          loadPhotos(); // Fotos nach der Bearbeitung aktualisieren
+        }}
+      />
+    );
+  };
 
   const renderPhotoList = () => (
     <View style={styles.photoListContainer}>

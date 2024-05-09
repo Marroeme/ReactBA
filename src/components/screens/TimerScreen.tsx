@@ -1,6 +1,6 @@
 import React, {useState, useEffect, useRef} from 'react';
 import {View, Text, Button, StyleSheet, Alert} from 'react-native';
-import notifee from '@notifee/react-native';
+import NotificationService from '../service/NotificationService';
 
 const INITIAL_TIME = 5; // Konstante für die initiale Zeit
 
@@ -24,22 +24,8 @@ const TimerScreen = () => {
   }, [secondsRemaining, timerActive]);
 
   const onDisplayNotification = async () => {
-    try {
-      await notifee.requestPermission();
-
-      await notifee.displayNotification({
-        title: 'Timer',
-        body: 'Timer abgelaufen',
-        android: {
-          channelId: 'default',
-        },
-      });
-    } catch (error) {
-      Alert.alert(
-        'Benachrichtigungsfehler',
-        'Benachrichtigung konnte nicht angezeigt werden.',
-      );
-    }
+    await NotificationService.requestPermission();
+    await NotificationService.showNotification('Timer', 'Timer abgelaufen');
   };
 
   const startTimer = () => {

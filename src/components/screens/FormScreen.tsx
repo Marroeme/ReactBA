@@ -1,4 +1,3 @@
-// src/screens/FormScreen.tsx
 import React, {useState, useMemo} from 'react';
 import {
   ScrollView,
@@ -105,9 +104,20 @@ export default function FormScreen() {
     <html>
       <head>
         <style>
-          body { font-family: Arial, sans-serif; }
-          h1 { text-align: center; }
-          p { margin: 0; padding: 4px 0; }
+        body {
+          font-family: Arial, sans-serif;
+        }
+        h2 {
+          font-size: 36px; /* Überschrift 2 */
+        }
+        h3 {
+          font-size: 32px; /* Überschrift 3 */
+        }
+        p {
+          margin: 0;
+          padding: 4px 0;
+          font-size: 30px; /* Absätze */
+        }
         </style>
       </head>
       <body marginwidth="50" marginheight="100" topmargin="100" leftmargin="50">
